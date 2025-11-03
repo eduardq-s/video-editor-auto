@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, videos, InsertVideo, edits, InsertEdit, processingJobs, InsertProcessingJob } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,76 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Video queries
+export async function createVideo(video: InsertVideo) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(videos).values(video);
+  return result;
+}
+
+export async function getVideoById(videoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(videos).where(eq(videos.id, videoId)).limit(1);
+  return result[0];
+}
+
+export async function getUserVideos(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(videos).where(eq(videos.userId, userId)).orderBy(videos.createdAt);
+}
+
+export async function updateVideoStatus(videoId: number, status: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(videos).set({ status: status as any }).where(eq(videos.id, videoId));
+}
+
+// Edit queries
+export async function createEdit(edit: InsertEdit) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(edits).values(edit);
+  return result;
+}
+
+export async function getEditById(editId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(edits).where(eq(edits.id, editId)).limit(1);
+  return result[0];
+}
+
+export async function getVideoEdits(videoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(edits).where(eq(edits.videoId, videoId)).orderBy(edits.createdAt);
+}
+
+export async function updateEditStatus(editId: number, status: string, updates?: Partial<InsertEdit>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(edits).set({ status: status as any, ...updates }).where(eq(edits.id, editId));
+}
+
+// Processing job queries
+export async function createProcessingJob(job: InsertProcessingJob) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.insert(processingJobs).values(job);
+}
+
+export async function getProcessingJobByJobId(jobId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.select().from(processingJobs).where(eq(processingJobs.jobId, jobId)).limit(1);
+  return result[0];
+}
+
+export async function updateProcessingJob(jobId: string, updates: Partial<InsertProcessingJob>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.update(processingJobs).set(updates as any).where(eq(processingJobs.jobId, jobId));
+}
